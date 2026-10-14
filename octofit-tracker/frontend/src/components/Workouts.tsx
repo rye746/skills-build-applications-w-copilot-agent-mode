@@ -1,15 +1,20 @@
+import { getJson } from '../api/client.js';
 import { ApiResource } from './ApiResource.js';
 
 type Workout = { title?: string; focus?: string; minutes?: number; difficulty?: string; reason?: string };
 
-export default function Workouts() {
+function loadWorkoutSuggestions() {
   const userEmail = encodeURIComponent('mona@example.com');
+  return getJson<{ suggestions: Workout[] }>(`/api/workouts/suggestions/${userEmail}`)
+    .then(({ suggestions }) => suggestions);
+}
+
+export default function Workouts() {
   return (
     <ApiResource<Workout>
       title="Workout suggestions"
       description="Recommend workouts from activity patterns."
-      path={`/api/workouts/suggestions/${userEmail}`}
-      collection="suggestions"
+      load={loadWorkoutSuggestions}
       emptyMessage="No workout suggestions available."
       renderItem={(workout) => (
         <>

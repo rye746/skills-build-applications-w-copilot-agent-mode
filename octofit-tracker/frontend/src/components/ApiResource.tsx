@@ -1,11 +1,9 @@
 import { useEffect, useState, type ReactNode } from 'react';
-import { getJson } from '../api/client.js';
 
 type Props<T> = {
   title: string;
   description: string;
-  path: string;
-  collection: string;
+  load: () => Promise<T[]>;
   emptyMessage: string;
   renderItem: (item: T) => ReactNode;
 };
@@ -15,17 +13,15 @@ type ResourceState<T> =
   | { status: 'error'; message: string }
   | { status: 'success'; items: T[] };
 
-export function ApiResource<T>({ title, description, path, collection, emptyMessage, renderItem }: Props<T>) {
+export function ApiResource<T>({ title, description, load, emptyMessage, renderItem }: Props<T>) {
   const [state, setState] = useState<ResourceState<T>>({ status: 'loading' });
 
   useEffect(() => {
     let active = true;
     setState({ status: 'loading' });
-    getJson<Record<string, unknown>>(path)
-      .then((response) => {
-        const items = response[collection];
-        if (!Array.isArray(items)) throw new Error(`Invalid ${collection} response`);
-        if (active) setState({ status: 'success', items: items as T[] });
+    load()
+      .then((items) => {
+        if (active) setState({ status: 'success', items });
       })
       .catch((error: unknown) => {
         if (active) {
@@ -39,7 +35,7 @@ export function ApiResource<T>({ title, description, path, collection, emptyMess
     return () => {
       active = false;
     };
-  }, [path, collection]);
+  }, [load]);
 
   return (
     <section className="card h-100">
